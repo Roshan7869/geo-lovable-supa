@@ -13,7 +13,7 @@ export const useGeocode = () => {
     
     try {
       // First check if we have this location in our database
-      const { data: existingLocation } = await supabase
+      const { data: existingLocation, error: queryError } = await supabase
         .from('location_details')
         .select(`
           *,
@@ -21,7 +21,7 @@ export const useGeocode = () => {
         `)
         .ilike('address', `%${address}%`)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (existingLocation && existingLocation.location_coordinates?.[0]) {
         const coords = existingLocation.location_coordinates[0];
