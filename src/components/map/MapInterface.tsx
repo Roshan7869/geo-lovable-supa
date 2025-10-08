@@ -62,11 +62,10 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
     : defaultCenter;
   const zoom = selectedLocation ? 15 : defaultZoom;
 
-  const handleMapClick = async (e: L.LeafletMouseEvent) => {
+  const handleMapClick = (e: L.LeafletMouseEvent) => {
     const { lat, lng } = e.latlng;
     
-    // Reverse geocoding would go here
-    // For now, just set the coordinates
+    // Set the coordinates with basic info
     onLocationSelect({
       latitude: lat,
       longitude: lng,
