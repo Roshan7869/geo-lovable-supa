@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Copy, Heart, MapPin, Globe, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LocationDetailsProps {
   location: {
@@ -18,8 +19,38 @@ interface LocationDetailsProps {
 
 export const LocationDetails = ({ location }: LocationDetailsProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Check if location is favorited
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!user) return;
+
+      const { data: locationDetail } = await supabase
+        .from('location_details')
+        .select('id')
+        .eq('address', location.address)
+        .maybeSingle();
+
+      if (locationDetail) {
+        const { data: favorite } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('location_detail_id', locationDetail.id)
+          .maybeSingle();
+
+        if (favorite) {
+          setIsFavorited(true);
+          setFavoriteId(favorite.id);
+        }
+      }
+    };
+
+    checkFavorite();
+  }, [location.address, user]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -29,7 +60,7 @@ export const LocationDetails = ({ location }: LocationDetailsProps) => {
     });
   };
 
-  const handleFavorite = () => {
+  const handleFavorite = async () => {
     if (!user) {
       toast({
         title: "Sign in required",
@@ -38,12 +69,81 @@ export const LocationDetails = ({ location }: LocationDetailsProps) => {
       });
       return;
     }
-    
-    setIsFavorited(!isFavorited);
-    toast({
-      title: isFavorited ? "Removed from favorites" : "Added to favorites",
-      description: isFavorited ? "Location removed from your favorites" : "Location saved to your favorites",
-    });
+
+    try {
+      if (isFavorited && favoriteId) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('id', favoriteId);
+
+        if (error) throw error;
+
+        setIsFavorited(false);
+        setFavoriteId(null);
+        toast({
+          title: "Removed from favorites",
+          description: "Location removed from your favorites",
+        });
+      } else {
+        // Add to favorites
+        // First, get or create location detail
+        let { data: locationDetail } = await supabase
+          .from('location_details')
+          .select('id')
+          .eq('address', location.address)
+          .maybeSingle();
+
+        if (!locationDetail) {
+          const { data: newLocation, error: locationError } = await supabase
+            .from('location_details')
+            .insert({
+              address: location.address,
+              formatted_address: location.formatted_address,
+              user_id: user.id,
+            })
+            .select()
+            .single();
+
+          if (locationError) throw locationError;
+          locationDetail = newLocation;
+
+          // Also save coordinates
+          await supabase.from('location_coordinates').insert({
+            latitude: location.latitude,
+            longitude: location.longitude,
+            location_detail_id: locationDetail.id,
+          });
+        }
+
+        const { data: favorite, error } = await supabase
+          .from('favorites')
+          .insert({
+            user_id: user.id,
+            location_detail_id: locationDetail.id,
+            name: location.address,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setIsFavorited(true);
+        setFavoriteId(favorite.id);
+        toast({
+          title: "Added to favorites",
+          description: "Location saved to your favorites",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { LatLngTuple } from 'leaflet';
+import { MapClickHandler } from './MapClickHandler';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -88,6 +89,7 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
         />
         
         <MapViewController center={center} zoom={zoom} />
+        <MapClickHandler onMapClick={handleMapClick} />
         
         {selectedLocation && (
           <Marker 
