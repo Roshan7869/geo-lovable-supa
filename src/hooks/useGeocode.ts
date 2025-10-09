@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
 export const useGeocode = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const geocodeLocation = async (address: string) => {

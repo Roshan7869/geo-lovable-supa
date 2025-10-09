@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Get initial session
@@ -39,7 +38,7 @@ export const useAuth = () => {
     );
 
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, []);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
