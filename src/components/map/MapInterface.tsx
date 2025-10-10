@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { LatLngTuple } from 'leaflet';
-import { MapClickHandler } from './MapClickHandler';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -38,8 +37,16 @@ interface MapInterfaceProps {
   }) => void;
 }
 
-// Component to handle map view changes
-const MapViewController = ({ center, zoom }: { center: LatLngTuple; zoom: number }) => {
+// Component to handle map view changes and click events
+const MapEventsHandler = ({ 
+  center, 
+  zoom, 
+  onMapClick 
+}: { 
+  center: LatLngTuple; 
+  zoom: number;
+  onMapClick: (e: L.LeafletMouseEvent) => void;
+}) => {
   const map = useMap();
   
   useEffect(() => {
@@ -47,6 +54,15 @@ const MapViewController = ({ center, zoom }: { center: LatLngTuple; zoom: number
       map.setView(center, zoom);
     }
   }, [map, center, zoom]);
+  
+  useEffect(() => {
+    if (map) {
+      map.on('click', onMapClick);
+      return () => {
+        map.off('click', onMapClick);
+      };
+    }
+  }, [map, onMapClick]);
   
   return null;
 };
@@ -67,7 +83,6 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
   const handleMapClick = (e: L.LeafletMouseEvent) => {
     const { lat, lng } = e.latlng;
     
-    // Set the coordinates with basic info
     onLocationSelect({
       latitude: lat,
       longitude: lng,
@@ -83,16 +98,12 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
         zoom={defaultZoom}
         className="w-full h-full z-0"
         ref={mapRef}
-        key="map-container"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        
-        <MapViewController center={center} zoom={zoom} />
-        <MapClickHandler onMapClick={handleMapClick} />
-        
+        <MapEventsHandler center={center} zoom={zoom} onMapClick={handleMapClick} />
         {selectedLocation && (
           <Marker 
             position={[selectedLocation.latitude, selectedLocation.longitude]}
@@ -120,7 +131,6 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
         )}
       </MapContainer>
       
-      {/* Map overlay with info */}
       <div className="absolute top-4 right-4 z-10">
         <div className="bg-card/90 backdrop-blur-sm rounded-lg p-3 shadow-medium border border-border/50">
           <p className="text-xs text-muted-foreground">
