@@ -4,9 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderProps {
   onAuthClick: () => void;
+  onHistoryClick: () => void;
+  onFavoritesClick: () => void;
 }
 
-export const Header = ({ onAuthClick }: HeaderProps) => {
+export const Header = ({ onAuthClick, onHistoryClick, onFavoritesClick }: HeaderProps) => {
   const { user, signOut } = useAuth();
 
   return (
@@ -25,11 +27,11 @@ export const Header = ({ onAuthClick }: HeaderProps) => {
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-2" onClick={onHistoryClick}>
                 <History className="w-4 h-4" />
                 History
               </Button>
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-2" onClick={onFavoritesClick}>
                 <Heart className="w-4 h-4" />
                 Favorites
               </Button>
