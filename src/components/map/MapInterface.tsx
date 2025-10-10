@@ -43,7 +43,9 @@ const MapViewController = ({ center, zoom }: { center: LatLngTuple; zoom: number
   const map = useMap();
   
   useEffect(() => {
-    map.setView(center, zoom);
+    if (map) {
+      map.setView(center, zoom);
+    }
   }, [map, center, zoom]);
   
   return null;
@@ -81,6 +83,7 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
         zoom={defaultZoom}
         className="w-full h-full z-0"
         ref={mapRef}
+        key="map-container"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
