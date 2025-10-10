@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { LatLngTuple } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,35 +38,22 @@ interface MapInterfaceProps {
   }) => void;
 }
 
-// Component to handle map view changes and click events
-const MapEventsHandler = ({ 
-  center, 
-  zoom, 
-  onMapClick 
-}: { 
-  center: LatLngTuple; 
+// Component to handle map events using react-leaflet hook
+function MapEvents({ onMapClick, center, zoom }: { 
+  onMapClick: (e: L.LeafletMouseEvent) => void; 
+  center: LatLngTuple;
   zoom: number;
-  onMapClick: (e: L.LeafletMouseEvent) => void;
-}) => {
-  const map = useMap();
-  
+}) {
+  const map = useMapEvents({
+    click: onMapClick,
+  });
+
   useEffect(() => {
-    if (map) {
-      map.setView(center, zoom);
-    }
+    map.setView(center, zoom);
   }, [map, center, zoom]);
-  
-  useEffect(() => {
-    if (map) {
-      map.on('click', onMapClick);
-      return () => {
-        map.off('click', onMapClick);
-      };
-    }
-  }, [map, onMapClick]);
-  
+
   return null;
-};
+}
 
 export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfaceProps) => {
   const mapRef = useRef<L.Map | null>(null);
@@ -103,7 +91,7 @@ export const MapInterface = ({ selectedLocation, onLocationSelect }: MapInterfac
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapEventsHandler center={center} zoom={zoom} onMapClick={handleMapClick} />
+        <MapEvents onMapClick={handleMapClick} center={center} zoom={zoom} />
         {selectedLocation && (
           <Marker 
             position={[selectedLocation.latitude, selectedLocation.longitude]}
